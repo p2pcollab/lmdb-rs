@@ -1,44 +1,24 @@
-use libc::{
-    c_uint,
-    size_t,
-};
+use libc::{c_uint, size_t};
+use std::ffi::CStr;
 use std::ffi::CString;
 #[cfg(windows)]
 use std::ffi::OsStr;
+use std::os::raw::c_char;
 #[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::Mutex;
-use std::{
-    fmt,
-    mem,
-    ptr,
-    result,
-};
+use std::{fmt, mem, ptr, result};
 
 use ffi;
 
-use byteorder::{
-    ByteOrder,
-    NativeEndian,
-};
+use byteorder::{ByteOrder, NativeEndian};
 
 use cursor::Cursor;
 use database::Database;
-use error::{
-    lmdb_result,
-    Error,
-    Result,
-};
-use flags::{
-    DatabaseFlags,
-    EnvironmentFlags,
-};
-use transaction::{
-    RoTransaction,
-    RwTransaction,
-    Transaction,
-};
+use error::{lmdb_result, Error, Result};
+use flags::{DatabaseFlags, EnvironmentFlags};
+use transaction::{RoTransaction, RwTransaction, Transaction};
 
 #[cfg(windows)]
 /// Adding a 'missing' trait from windows OsStrExt
@@ -199,6 +179,17 @@ impl Environment {
             let mut info = Info(mem::zeroed());
             lmdb_try!(ffi::mdb_env_info(self.env(), &mut info.0));
             Ok(info)
+        }
+    }
+
+    /// Retrieves version string about this environment.
+    pub fn version(&self) -> &str {
+        unsafe {
+            let mut major: i32 = 0;
+            let mut minor: i32 = 0;
+            let mut patch: i32 = 0;
+            let version: *const c_char = ffi::mdb_version(&mut major, &mut minor, &mut patch) as *const c_char;
+            std::str::from_utf8_unchecked(CStr::from_ptr(version).to_bytes())
         }
     }
 
@@ -487,10 +478,7 @@ mod test {
 
     extern crate byteorder;
 
-    use self::byteorder::{
-        ByteOrder,
-        LittleEndian,
-    };
+    use self::byteorder::{ByteOrder, LittleEndian};
     use tempdir::TempDir;
 
     use flags::*;
