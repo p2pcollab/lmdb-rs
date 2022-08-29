@@ -59,8 +59,17 @@ fn test_simple(env_path: &str) {
         mv_data: ptr::null_mut(),
     };
     let mut txn: *mut MDB_txn = ptr::null_mut();
-    let sval = str!("foo") as *mut c_void;
-    let dval = str!("bar") as *mut c_void;
+    let sval = str!("fdedeoo") as *mut c_void;
+    let dval = str!("bdedear") as *mut c_void;
+
+    let mut buffer: [u8; 7] = [0; 7];
+    buffer[0] = 65;
+    buffer[1] = 66;
+    buffer[2] = 67;
+    buffer[3] = 68;
+    buffer[4] = 69;
+    buffer[5] = 70;
+    println!("The bytes: {:?}", &buffer[..7]);
 
     unsafe {
         E!(mdb_env_create(&mut env));
@@ -68,13 +77,13 @@ fn test_simple(env_path: &str) {
         E!(mdb_env_open(env, str!(env_path), 0, 0664));
 
         E!(mdb_txn_begin(env, ptr::null_mut(), 0, &mut txn));
-        E!(mdb_dbi_open(txn, str!("subdb"), MDB_CREATE, &mut dbi));
+        E!(mdb_dbi_open(txn, str!("test"), MDB_CREATE, &mut dbi));
         E!(mdb_txn_commit(txn));
 
-        key.mv_size = 3;
-        key.mv_data = sval;
-        data.mv_size = 3;
-        data.mv_data = dval;
+        key.mv_size = 7;
+        key.mv_data = buffer.as_mut_ptr() as *mut c_void;
+        data.mv_size = 7;
+        data.mv_data = buffer.as_mut_ptr() as *mut c_void;
 
         E!(mdb_txn_begin(env, ptr::null_mut(), 0, &mut txn));
         E!(mdb_put(txn, dbi, &mut key, &mut data, 0));
