@@ -592,6 +592,9 @@ extern "C" {
     pub fn mdb_env_set_mapsize(env: *mut MDB_env, size: usize) -> ::libc::c_int;
 }
 extern "C" {
+    pub fn mdb_env_init_crypto(env: *mut MDB_env, key: *mut ::libc::c_void) -> ::libc::c_int;
+}
+extern "C" {
     #[doc = " @brief Set the maximum number of threads/reader slots for the environment."]
     #[doc = ""]
     #[doc = " This defines the number of slots in the lock table that is used to track readers in the"]

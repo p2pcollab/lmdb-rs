@@ -59,8 +59,8 @@ fn test_simple(env_path: &str) {
         mv_data: ptr::null_mut(),
     };
     let mut txn: *mut MDB_txn = ptr::null_mut();
-    let sval = str!("fdedeoo") as *mut c_void;
-    let dval = str!("bdedear") as *mut c_void;
+    //let sval = str!("fdedeoo") as *mut c_void;
+    //let dval = str!("bdedear") as *mut c_void;
 
     let mut buffer: [u8; 7] = [0; 7];
     buffer[0] = 65;
@@ -77,7 +77,7 @@ fn test_simple(env_path: &str) {
         E!(mdb_env_open(env, str!(env_path), 0, 0664));
 
         E!(mdb_txn_begin(env, ptr::null_mut(), 0, &mut txn));
-        E!(mdb_dbi_open(txn, str!("test"), MDB_CREATE, &mut dbi));
+        E!(mdb_dbi_open(txn, str!("testdb"), MDB_CREATE, &mut dbi));
         E!(mdb_txn_commit(txn));
 
         key.mv_size = 7;

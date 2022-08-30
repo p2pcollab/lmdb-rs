@@ -1,9 +1,11 @@
 use libc::{c_uint, size_t};
+use std::alloc::{alloc, dealloc, Layout};
 use std::ffi::CStr;
 use std::ffi::CString;
 #[cfg(windows)]
 use std::ffi::OsStr;
 use std::os::raw::c_char;
+
 #[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
@@ -20,6 +22,8 @@ use error::{lmdb_result, Error, Result};
 use flags::{DatabaseFlags, EnvironmentFlags};
 use transaction::{RoTransaction, RwTransaction, Transaction};
 
+use libc::c_void;
+
 #[cfg(windows)]
 /// Adding a 'missing' trait from windows OsStrExt
 trait OsStrExtLmdb {
@@ -32,12 +36,15 @@ impl OsStrExtLmdb for OsStr {
     }
 }
 
+static ZEROS: [u8; 32] = [0; 32];
+
 /// An LMDB environment.
 ///
 /// An environment supports multiple databases, all residing in the same shared-memory map.
 pub struct Environment {
     env: *mut ffi::MDB_env,
     dbi_open_mutex: Mutex<()>,
+    enc_key_ptr: *mut u8,
 }
 
 impl Environment {
@@ -49,6 +56,7 @@ impl Environment {
             max_readers: None,
             max_dbs: None,
             map_size: None,
+            encryption_key: None,
         }
     }
 
@@ -363,7 +371,16 @@ impl fmt::Debug for Environment {
 
 impl Drop for Environment {
     fn drop(&mut self) {
-        unsafe { ffi::mdb_env_close(self.env) }
+        unsafe {
+            ffi::mdb_env_close(self.env);
+            if !self.enc_key_ptr.is_null() {
+                // zeros the heap memory that was used for the key
+                std::ptr::copy(ZEROS.as_ptr(), self.enc_key_ptr, 16);
+                // and dealloc it
+                let layout = Layout::new::<[u8; 32]>();
+                dealloc(self.enc_key_ptr, layout);
+            }
+        }
     }
 }
 
@@ -378,6 +395,7 @@ pub struct EnvironmentBuilder {
     max_readers: Option<c_uint>,
     max_dbs: Option<c_uint>,
     map_size: Option<size_t>,
+    encryption_key: Option<[u8; 32]>,
 }
 
 impl EnvironmentBuilder {
@@ -399,8 +417,18 @@ impl EnvironmentBuilder {
     /// paths are not supported either.
     pub fn open_with_permissions(&self, path: &Path, mode: ffi::mdb_mode_t) -> Result<Environment> {
         let mut env: *mut ffi::MDB_env = ptr::null_mut();
+        let mut enc_key_ptr: *mut u8 = ptr::null_mut();
         unsafe {
             lmdb_try!(ffi::mdb_env_create(&mut env));
+            if let Some(encryption_key) = self.encryption_key {
+                let layout = Layout::new::<[u8; 32]>();
+                enc_key_ptr = alloc(layout);
+                std::ptr::copy(encryption_key.as_ptr(), enc_key_ptr, 32);
+                lmdb_try_with_cleanup!(ffi::mdb_env_init_crypto(env, enc_key_ptr as *mut c_void), || {
+                    ffi::mdb_env_close(env);
+                    dealloc(enc_key_ptr, layout);
+                })
+            }
             if let Some(max_readers) = self.max_readers {
                 lmdb_try_with_cleanup!(ffi::mdb_env_set_maxreaders(env, max_readers), ffi::mdb_env_close(env))
             }
@@ -421,6 +449,7 @@ impl EnvironmentBuilder {
         }
         Ok(Environment {
             env,
+            enc_key_ptr,
             dbi_open_mutex: Mutex::new(()),
         })
     }
@@ -469,6 +498,12 @@ impl EnvironmentBuilder {
     /// by the environment will be silently changed to the current size of the used space.
     pub fn set_map_size(&mut self, map_size: size_t) -> &mut EnvironmentBuilder {
         self.map_size = Some(map_size);
+        self
+    }
+
+    /// Sets the encryption key to use for the environment.
+    pub fn set_enc_key(&mut self, key: [u8; 32]) -> &mut EnvironmentBuilder {
+        self.encryption_key = Some(key);
         self
     }
 }

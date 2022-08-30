@@ -2,7 +2,7 @@
 name = "lmdb-lofire"
 # NB: When modifying, also modify html_root_url in lib.rs
 version = "0.14.0"
-authors = ["NikoPLP <info@parlepeuple.fr>"]
+authors = ["Dan Burkert <dan@danburkert.com>", "Victor Porof <vporof@mozilla.com>","NikoPLP <info@parlepeuple.fr>"]
 license = "Apache-2.0"
 description = "Idiomatic and safe LMDB wrapper."
 documentation = "https://docs.rs/lmdb-lofire"
