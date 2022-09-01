@@ -20,14 +20,14 @@ cargo build
 
 ## Publishing to crates.io
 
-To publish the lmdb-lofire-sys crate to crates.io:
+To publish the lmdb-crypto-sys crate to crates.io:
 
 ```bash
 git clone --recursive git@github.com:mozilla/lmdb-rs.git
 cd lmdb-rs/lmdb-sys
 # Update the version string in lmdb-sys/Cargo.toml and lmdb-sys/src/lib.rs.
 cargo publish
-git tag lmdb-lofire-sys-$VERSION # where $VERSION is the updated version string
+git tag lmdb-crypto-sys-$VERSION # where $VERSION is the updated version string
 git push git@github.com:mozilla/lmdb-rs.git --tags
 ```
 
@@ -37,11 +37,11 @@ To publish the lmdb-rkv crate to crates.io:
 git clone --recursive git@github.com:mozilla/lmdb-rs.git
 cd lmdb-rs
 # Update the version string in Cargo.toml and src/lib.rs and temporarily change
-# the lmdb-lofire-sys dependency in Cargo.toml to the latest version on crates.io.
+# the lmdb-crypto-sys dependency in Cargo.toml to the latest version on crates.io.
 cargo publish
 git tag $VERSION # where $VERSION is the updated version string
 git push git@github.com:mozilla/lmdb-rs.git --tags
-# Change the lmdb-lofire-sys dependency in Cargo.toml back to a path dependency
+# Change the lmdb-crypto-sys dependency in Cargo.toml back to a path dependency
 # on the ./lmdb-sys directory.
 ```
 

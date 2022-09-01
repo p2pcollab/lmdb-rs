@@ -1,11 +1,11 @@
 [package]
-name = "lmdb-lofire"
+name = "lmdb-crypto-rs"
 # NB: When modifying, also modify html_root_url in lib.rs
 version = "0.14.0"
 authors = ["Dan Burkert <dan@danburkert.com>", "Victor Porof <vporof@mozilla.com>","NikoPLP <info@parlepeuple.fr>"]
 license = "Apache-2.0"
 description = "Idiomatic and safe LMDB wrapper."
-documentation = "https://docs.rs/lmdb-lofire"
+documentation = "https://docs.rs/lmdb-crypto-rs"
 homepage = "https://github.com/nikoPLP/lmdb-rs"
 repository = "https://github.com/nikoPLP/lmdb-rs.git"
 readme = "README.md"
@@ -37,15 +37,15 @@ bitflags = "1"
 byteorder = "1"
 libc = "0.2"
 
-# In order to ensure that we test lmdb-lofire in CI against the in-tree version
-# of lmdb-lofire-sys, we specify the dependency as a path here.
+# In order to ensure that we test lmdb-crypto-rs in CI against the in-tree version
+# of lmdb-crypto-sys, we specify the dependency as a path here.
 #
-# But we can't publish the lmdb-lofire crate to crates.io with a path dependency,
+# But we can't publish the lmdb-crypto-rs crate to crates.io with a path dependency,
 # so we have to temporarily change this to point to the current version
-# of lmdb-lofire-sys on crates.io when publishing lmdb-lofire to that crate registry.
+# of lmdb-crypto-sys on crates.io when publishing lmdb-crypto to that crate registry.
 #
 # (See "Publishing to crates.io" in README.md for more information.)
-lmdb-lofire-sys = { path = "./lmdb-sys" }
+lmdb-crypto-sys = { path = "./lmdb-sys" }
 
 [dev-dependencies]
 rand = "0.4"
@@ -53,6 +53,6 @@ tempdir = "0.3"
 
 [features]
 default = []
-with-asan = ["lmdb-lofire-sys/with-asan"]
-with-fuzzer = ["lmdb-lofire-sys/with-fuzzer"]
-with-fuzzer-no-link = ["lmdb-lofire-sys/with-fuzzer-no-link"]
+with-asan = ["lmdb-crypto-sys/with-asan"]
+with-fuzzer = ["lmdb-crypto-sys/with-fuzzer"]
+with-fuzzer-no-link = ["lmdb-crypto-sys/with-fuzzer-no-link"]

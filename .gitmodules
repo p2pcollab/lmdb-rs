@@ -1,4 +1,4 @@
 [submodule "lmdb-sys/lmdb"]
 	path = lmdb-sys/lmdb
 	url = https://github.com/nikoPLP/lmdb.git
-	branch = lofire0_1_0
+	branch = mdb.crypto

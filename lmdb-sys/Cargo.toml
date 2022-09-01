@@ -1,11 +1,11 @@
 [package]
-name = "lmdb-lofire-sys"
+name = "lmdb-crypto-sys"
 # NB: When modifying, also modify html_root_url in lib.rs
 version = "0.11.2"
 authors = ["NikoPLP <info@parlepeuple.fr>"]
 license = "Apache-2.0"
 description = "Rust bindings for liblmdb."
-documentation = "https://docs.rs/lmdb-lofire-sys"
+documentation = "https://docs.rs/lmdb-crypto-sys"
 homepage = "https://github.com/nikoPLP/lmdb-rs"
 repository = "https://github.com/nikoPLP/lmdb-rs.git"
 readme = "../README.md"
