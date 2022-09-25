@@ -1,25 +1,10 @@
 use std::marker::PhantomData;
-use std::{
-    fmt,
-    mem,
-    ptr,
-    result,
-    slice,
-};
+use std::{fmt, mem, ptr, result, slice};
 
-use libc::{
-    c_uint,
-    c_void,
-    size_t,
-    EINVAL,
-};
+use libc::{c_uint, c_void, size_t, EINVAL};
 
 use database::Database;
-use error::{
-    lmdb_result,
-    Error,
-    Result,
-};
+use error::{lmdb_result, Error, Result};
 use ffi;
 use flags::WriteFlags;
 use transaction::Transaction;
@@ -86,6 +71,22 @@ pub trait Cursor<'txn> {
         Iter::new(self.cursor(), ffi::MDB_GET_CURRENT, ffi::MDB_NEXT)
     }
 
+    /// Iterate over database items starting from the given key, in backward direction.
+    ///
+    /// For databases with duplicate data items (`DatabaseFlags::DUP_SORT`), the
+    /// duplicate data items of each key will be returned before moving on to
+    /// the next key.
+    fn iter_prev_from<K>(&mut self, key: K) -> Iter<'txn>
+    where
+        K: AsRef<[u8]>,
+    {
+        match self.get(Some(key.as_ref()), None, ffi::MDB_SET_RANGE) {
+            Ok(_) | Err(Error::NotFound) => (),
+            Err(error) => return Iter::Err(error),
+        };
+        Iter::new(self.cursor(), ffi::MDB_PREV, ffi::MDB_PREV)
+    }
+
     /// Iterate over duplicate database items. The iterator will begin with the
     /// item next after the cursor, and continue until the end of the database.
     /// Each item will be returned as an iterator of its duplicates.
@@ -110,6 +111,19 @@ pub trait Cursor<'txn> {
             Err(error) => return IterDup::Err(error),
         };
         IterDup::new(self.cursor(), ffi::MDB_GET_CURRENT)
+    }
+
+    /// Iterate in backward direction over duplicate items in the database starting from the key just before the given
+    /// key. Each item will be returned as an iterator of its duplicates.
+    fn iter_prev_dup_from<K>(&mut self, key: K) -> IterPrevDup<'txn>
+    where
+        K: AsRef<[u8]>,
+    {
+        match self.get(Some(key.as_ref()), None, ffi::MDB_SET_RANGE) {
+            Ok(_) | Err(Error::NotFound) => (),
+            Err(error) => return IterPrevDup::Err(error),
+        };
+        IterPrevDup::new(self.cursor(), ffi::MDB_PREV)
     }
 
     /// Iterate over the duplicates of the item in the database with the given key.
@@ -414,6 +428,83 @@ impl<'txn> Iterator for IterDup<'txn> {
                 }
             },
             &mut IterDup::Err(err) => Some(Iter::Err(err)),
+        }
+    }
+}
+
+/// An iterator over the keys and duplicate values in an LMDB database, in reverse order.
+///
+/// The yielded items of the iterator are themselves iterators over the duplicate values for a
+/// specific key.
+pub enum IterPrevDup<'txn> {
+    /// An iterator that returns an error on every call to Iter.next().
+    /// Cursor.iter*() creates an Iter of this type when LMDB returns an error
+    /// on retrieval of a cursor.  Using this variant instead of returning
+    /// an error makes Cursor.iter()* methods infallible, so consumers only
+    /// need to check the result of Iter.next().
+    Err(Error),
+
+    /// An iterator that returns an Item on calls to Iter.next().
+    /// The Item is a Result<(&'txn [u8], &'txn [u8])>, so this variant
+    /// might still return an error, if retrieval of the key/value pair
+    /// fails for some reason.
+    Ok {
+        /// The LMDB cursor with which to iterate.
+        cursor: *mut ffi::MDB_cursor,
+
+        /// The first operation to perform when the consumer calls Iter.next().
+        op: c_uint,
+
+        /// A marker to ensure the iterator doesn't outlive the transaction.
+        _marker: PhantomData<fn(&'txn ())>,
+    },
+}
+
+impl<'txn> IterPrevDup<'txn> {
+    /// Creates a new iterator backed by the given cursor.
+    fn new<'t>(cursor: *mut ffi::MDB_cursor, op: c_uint) -> IterPrevDup<'t> {
+        IterPrevDup::Ok {
+            cursor,
+            op,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'txn> fmt::Debug for IterPrevDup<'txn> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
+        f.debug_struct("IterPrevDup").finish()
+    }
+}
+
+impl<'txn> Iterator for IterPrevDup<'txn> {
+    type Item = Iter<'txn>;
+
+    fn next(&mut self) -> Option<Iter<'txn>> {
+        match self {
+            &mut IterPrevDup::Ok {
+                cursor,
+                ref mut op,
+                _marker,
+            } => {
+                let mut key = ffi::MDB_val {
+                    mv_size: 0,
+                    mv_data: ptr::null_mut(),
+                };
+                let mut data = ffi::MDB_val {
+                    mv_size: 0,
+                    mv_data: ptr::null_mut(),
+                };
+                let op = mem::replace(op, ffi::MDB_PREV_NODUP);
+                let err_code = unsafe { ffi::mdb_cursor_get(cursor, &mut key, &mut data, op) };
+
+                if err_code == ffi::MDB_SUCCESS {
+                    Some(Iter::new(cursor, ffi::MDB_GET_CURRENT, ffi::MDB_PREV_DUP))
+                } else {
+                    None
+                }
+            },
+            &mut IterPrevDup::Err(err) => Some(Iter::Err(err)),
         }
     }
 }
