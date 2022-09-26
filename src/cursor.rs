@@ -134,7 +134,7 @@ pub trait Cursor<'txn> {
             Ok(_) | Err(Error::NotFound) => (),
             Err(error) => return IterPrevDup::Err(error),
         };
-        IterPrevDup::new(self.cursor(), ffi::MDB_PREV)
+        IterPrevDup::new(self.cursor(), ffi::MDB_PREV_NODUP)
     }
 
     /// Iterate over the duplicates of the item in the database with the given key.
@@ -221,7 +221,7 @@ impl<'txn> Drop for RwCursor<'txn> {
 }
 
 impl<'txn> RwCursor<'txn> {
-    /// Creates a new read-only cursor in the given database and transaction.
+    /// Creates a new read-write cursor in the given database and transaction.
     /// Prefer using `RwTransaction::open_rw_cursor`.
     pub(crate) fn new<T>(txn: &'txn T, db: Database) -> Result<RwCursor<'txn>>
     where
@@ -508,7 +508,6 @@ impl<'txn> Iterator for IterPrevDup<'txn> {
                 };
                 let op = mem::replace(op, ffi::MDB_PREV_NODUP);
                 let err_code = unsafe { ffi::mdb_cursor_get(cursor, &mut key, &mut data, op) };
-
                 if err_code == ffi::MDB_SUCCESS {
                     Some(Iter::new(cursor, ffi::MDB_GET_CURRENT, ffi::MDB_PREV_DUP))
                 } else {
