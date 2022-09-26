@@ -13,31 +13,12 @@ extern crate tempdir;
 #[macro_use]
 extern crate bitflags;
 
-pub use cursor::{
-    Cursor,
-    Iter,
-    IterDup,
-    RoCursor,
-    RwCursor,
-};
+pub use cursor::{Cursor, Iter, IterDup, IterPrevDup, RoCursor, RwCursor};
 pub use database::Database;
-pub use environment::{
-    Environment,
-    EnvironmentBuilder,
-    Info,
-    Stat,
-};
-pub use error::{
-    Error,
-    Result,
-};
+pub use environment::{Environment, EnvironmentBuilder, Info, Stat};
+pub use error::{Error, Result};
 pub use flags::*;
-pub use transaction::{
-    InactiveTransaction,
-    RoTransaction,
-    RwTransaction,
-    Transaction,
-};
+pub use transaction::{InactiveTransaction, RoTransaction, RwTransaction, Transaction};
 
 macro_rules! lmdb_try {
     ($expr:expr) => {{
@@ -70,10 +51,7 @@ mod transaction;
 #[cfg(test)]
 mod test_utils {
 
-    use byteorder::{
-        ByteOrder,
-        LittleEndian,
-    };
+    use byteorder::{ByteOrder, LittleEndian};
     use tempdir::TempDir;
 
     use super::*;
