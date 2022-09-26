@@ -54,7 +54,7 @@ pub trait Cursor<'txn> {
     /// duplicate data items of each key will be returned before moving on to
     /// the next key.
     fn iter_prev(&mut self) -> Iter<'txn> {
-        Iter::new(self.cursor(), ffi::MDB_PREV, ffi::MDB_PREV)
+        Iter::new(self.cursor(), ffi::MDB_GET_CURRENT, ffi::MDB_PREV)
     }
 
     /// Iterate over database items starting from the beginning of the database.
