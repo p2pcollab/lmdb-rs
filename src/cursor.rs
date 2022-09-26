@@ -46,6 +46,17 @@ pub trait Cursor<'txn> {
         Iter::new(self.cursor(), ffi::MDB_NEXT, ffi::MDB_NEXT)
     }
 
+    /// Iterate over database items in reverse order. The iterator will begin with item next
+    /// after the cursor, and continue until the end of the database. For new
+    /// cursors, the iterator will begin with the first item in the database.
+    ///
+    /// For databases with duplicate data items (`DatabaseFlags::DUP_SORT`), the
+    /// duplicate data items of each key will be returned before moving on to
+    /// the next key.
+    fn iter_prev(&mut self) -> Iter<'txn> {
+        Iter::new(self.cursor(), ffi::MDB_PREV, ffi::MDB_PREV)
+    }
+
     /// Iterate over database items starting from the beginning of the database.
     ///
     /// For databases with duplicate data items (`DatabaseFlags::DUP_SORT`), the
