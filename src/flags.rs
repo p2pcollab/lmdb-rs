@@ -169,5 +169,8 @@ bitflags! {
 
         #[doc="Same as `APPEND`, but for sorted dup data."]
         const APPEND_DUP = MDB_APPENDDUP;
+
+        #[doc="Position at key/data pair. Only for MDB_DUPSORT"]
+        const GET_BOTH = MDB_GET_BOTH;
     }
 }
