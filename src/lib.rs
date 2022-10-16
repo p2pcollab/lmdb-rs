@@ -17,6 +17,7 @@ pub use cursor::{Cursor, Iter, IterDup, IterPrevDup, RoCursor, RwCursor};
 pub use database::Database;
 pub use environment::{Environment, EnvironmentBuilder, Info, Stat};
 pub use error::{Error, Result};
+pub use ffi::MDB_GET_BOTH;
 pub use flags::*;
 pub use transaction::{InactiveTransaction, RoTransaction, RwTransaction, Transaction};
 
